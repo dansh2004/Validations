@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Валидатор данных</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #e6f2ff;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 15px;
+            border: 2px solid #000;
+            border-radius: 10px;
+            background-color: white;
+            position: relative;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .validator-group {
+            display: flex;
+            margin-bottom: 1px;
+            align-items: center;
+        }
+
+        .validator-card {
+            padding: 20px;
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .input-container {
+            flex-grow: 1;
+            position: relative;
+        }
+
+        .validator-input {
+            width: 96%;
+            padding: 12px;
+            border: 2px solid #000;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+
+        .validator-input::placeholder {
+            color: #bbb;
+        }
+
+        .validate-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: 2px solid #4CAF50;
+            padding: 12px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-left: 10px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .result-container {
+            position: relative;
+            margin-bottom: 20px;
+            min-height: 0;
+        }
+
+        .result {
+            padding: 8px 30px 8px 8px;
+            margin: 20px 0;
+            border-radius: 6px;
+            width: calc(100% - 24px);
+            max-width: 765px;
+            overflow-y: auto;
+            border: 1px solid transparent;
+            line-height: 1.4;
+            font-size: 17px;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+            display: block;
+        }
+
+        .error {
+            background-color: #ffebee;
+            color: #d32f2f;
+            border: 1px solid #ffcdd2;
+            display: block;
+        }
+
+        .close-result {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 16px;
+            height: 16px;
+            background-color: black;
+            color: white;
+            border: none;
+            border-radius: 2px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+            padding: 0;
+        }
+
+        .close-result::before {
+            content: "×";
+            height: 15px;
+            font-size: 17px;
+            line-height: 1;
+            position: center;
+            top: 2px;
+            right: 1px;
+        }
+
+        .history-btn {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            z-index: 10;
+        }
+
+        .history-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .history-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 95%;
+            max-width: 1000px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 10;
+            padding-bottom: 10px;
+        }
+
+        .close-history {
+            font-size: 24px;
+            cursor: pointer;
+            color: #333;
+            background: none;
+            border: none;
+            padding: 5px;
+        }
+
+        .history-table-container {
+            overflow: auto;
+            flex-grow: 1;
+            margin-bottom: 15px;
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #000;
+        }
+
+        .history-table th, .history-table td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: center;
+            height: 30px;
+            max-height: 30px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        .history-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 5;
+        }
+
+        .history-table tr.valid {
+            background-color: #d4edda;
+        }
+
+        .history-table tr.invalid {
+            background-color: #f8d7da;
+        }
+
+        .history-table td:nth-child(3) {
+            text-align: left;
+            max-width: 300px;
+        }
+
+        .history-table td:last-child {
+            background-color: white;
+            border-top: none !important;
+            border-right: none !important;
+            border-bottom: none !important;
+            padding: 0;
+            text-align: center;
+        }
+
+        .history-table th:last-child {
+            background-color: white;
+            border-top: none !important;
+            border-right: none !important;
+            border-bottom: none !important;
+        }
+
+        .delete-row-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 0 auto;
+            white-space: nowrap;
+        }
+
+        .clear-history-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            align-self: flex-start;
+            margin-top: 10px;
+        }
+
+        .confirm-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .confirm-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 300px;
+            text-align: center;
+            border: 1px solid #000;
+        }
+
+        .confirm-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .confirm-ok {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .confirm-cancel {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .error-message {
+            white-space: pre-line;
+            text-align: left;
+            padding-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="history-btn" id="historyBtn">История валидаций</button>
+        <h1>Валидатор данных</h1>
+
+        <div class="validator-group">
+            <div class="input-container">
+                <input type="text" id="phoneInput" class="validator-input" placeholder="Номер телефона">
+            </div>
+            <button class="validate-btn" onclick="validate('phone')">Проверить</button>
+        </div>
+        <div class="result-container" id="phoneResultContainer"></div>
+
+        <div class="validator-group">
+            <div class="input-container">
+                <input type="text" id="innInput" class="validator-input" placeholder="ИНН">
+            </div>
+            <button class="validate-btn" onclick="validate('inn')">Проверить</button>
+        </div>
+        <div class="result-container" id="innResultContainer"></div>
+
+
+
+        <div class="validator-group">
+            <div class="input-container">
+                <input type="text" id="snilsInput" class="validator-input" placeholder="СНИЛС">
+            </div>
+            <button class="validate-btn" onclick="validate('snils')">Проверить</button>
+        </div>
+        <div class="result-container" id="snilsResultContainer"></div>
+
+        <div class="validator-group">
+            <div class="input-container">
+                <input type="text" id="omsInput" class="validator-input" placeholder="Полис ОМС">
+            </div>
+            <button class="validate-btn" onclick="validate('oms')">Проверить</button>
+        </div>
+        <div class="result-container" id="omsResultContainer"></div>
+
+        <div class="validator-group">
+            <div class="input-container">
+                <input type="text" id="carNumberInput" class="validator-input" placeholder="Номер автомобиля">
+            </div>
+            <button class="validate-btn" onclick="validate('carNumber')">Проверить</button>
+        </div>
+        <div class="result-container" id="carNumberResultContainer"></div>
+
+        <div class="validator-group">
+            <div class="input-container">
+                <input type="text" id="emailInput" class="validator-input" placeholder="Email">
+            </div>
+            <button class="validate-btn" onclick="validate('email')">Проверить</button>
+        </div>
+        <div class="result-container" id="emailResultContainer"></div>
+    </div>
+
+    <div class="history-modal" id="historyModal">
+        <div class="history-content">
+            <div class="history-header">
+                <h2>История валидаций</h2>
+                <button class="close-history" id="closeHistory">&times;</button>
+            </div>
+
+            <div class="history-table-container">
+                <table class="history-table" id="historyTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 100px;">Тип валидации</th>
+                            <th style="width: 80px;">Статус</th>
+                            <th style="min-width: 300px;">Текст валидации</th>
+                            <th style="width: 120px;">Время</th>
+                            <th style="width: 80px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyBody">
+                    </tbody>
+                </table>
+            </div>
+
+            <button class="clear-history-btn" id="clearHistoryBtn">Очистить историю</button>
+        </div>
+    </div>
+
+    <div class="confirm-modal" id="confirmDeleteModal">
+        <div class="confirm-content">
+            <p>Вы действительно хотите удалить данную валидацию из истории?</p>
+            <div class="confirm-buttons">
+                <button class="confirm-ok" id="confirmDeleteOk">Ok</button>
+                <button class="confirm-cancel" id="confirmDeleteCancel">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="confirm-modal" id="confirmClearModal">
+        <div class="confirm-content">
+            <p>Вы действительно хотите полностью очистить историю валидаций?</p>
+            <div class="confirm-buttons">
+                <button class="confirm-ok" id="confirmClearOk">Ok</button>
+                <button class="confirm-cancel" id="confirmClearCancel">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Определяем API_BASE_URL в самом начале
+        const API_BASE_URL = 'http://localhost:8000';
+
+        const errorMessages = {
+            phone: "Неверно введён номер телефона. Номер телефона нужно вводить по следующему шаблону: +7(___)___-__-__, где подчёркивания(_) обозначают цифры, a между символами не должно быть пробелов.",
+            inn: "Неверно введён ИНН. Различают следующие виды ИНН:\n\n1. ИНН физического лица. Состоит из 12 цифр, где первые две цифры номер региона: допустимы двузначные значения от 01 до 87 включительно, а также 89, 92, 94.\n\n2. ИНН отечественного юридического лица. Состоит из 10 цифр, где первые две цифры номер региона: допустимы двузначные значения от 01 до 87 включительно, а также 89, 92, 94.\n\n3. ИНН иностранного юридического лица. Состоит из 10 цифр и начинается с 9909.",
+            snils: "Неверно введён СНИЛС. Нужно вводить по следующему шаблону: ___-___-___ __, где подчёркивания(_) обозначают цифры, a между символами не должно быть пробелов.",
+            oms: "Неверно введён номер полиса ОМС. Номер полиса ОМС состоит из 16 цифр, где две первые из них обозначают номер региона: допустимы двузначные значения от 01 до 87 включительно, а также 89, 92, 94.",
+            carNumber: "Неверно введён номер автомобиля (без учёта номера региона). Номер автомобиля нужно вводить по следующему шаблону: А000АА, где вместо нулей нужно указать любые цифры от 0 до 9 включительно (комбинация '000' недопустима), вместо букв 'А' нужно указать русские буквы из следующего набора (в любом регистре): А, В, Е, К, М, Н, О, Р, С, Т, У, Х.",
+            email: "Неверно введён адрес электронной почты: адрес google-почты должен оканчиваться на @gmail.com, а адрес яндекс-почты - на @yandex.ru."
+        };
+
+        const successMessages = {
+            phone: "Номер телефона введён верно!",
+            inn: {
+                Fiz_litso: "ИНН физического лица введён верно!",
+                Ur_ot_litso: "ИНН отечественного юридического лица введён верно!",
+                Ur_in_litso: "ИНН иностранного юридического лица введён верно!"
+            },
+            snils: "СНИЛС введён верно!",
+            oms: "Номер полиса ОМС введён верно!",
+            carNumber: "Номер автомобиля (без учёта номера региона) введён верно!",
+            email: {
+                google: "Адрес google-почты введён верно!",
+                yandex: "Адрес yandex-почты введён верно!"
+            }
+        };
+
+        let currentDeleteId = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const historyBtn = document.getElementById('historyBtn');
+            const historyModal = document.getElementById('historyModal');
+            const closeHistory = document.getElementById('closeHistory');
+            const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+            const confirmDeleteModal = document.getElementById('confirmDeleteModal');
+            const confirmDeleteOk = document.getElementById('confirmDeleteOk');
+            const confirmDeleteCancel = document.getElementById('confirmDeleteCancel');
+            const confirmClearModal = document.getElementById('confirmClearModal');
+            const confirmClearOk = document.getElementById('confirmClearOk');
+            const confirmClearCancel = document.getElementById('confirmClearCancel');
+
+            historyBtn.addEventListener('click', function() {
+                historyModal.style.display = 'flex';
+                loadHistory();
+            });
+
+            closeHistory.addEventListener('click', function() {
+                historyModal.style.display = 'none';
+            });
+
+            window.addEventListener('click', function(event) {
+                if (event.target === historyModal) {
+                    historyModal.style.display = 'none';
+                }
+                if (event.target === confirmDeleteModal) {
+                    confirmDeleteModal.style.display = 'none';
+                }
+                if (event.target === confirmClearModal) {
+                    confirmClearModal.style.display = 'none';
+                }
+            });
+
+            clearHistoryBtn.addEventListener('click', function() {
+                confirmClearModal.style.display = 'flex';
+            });
+
+            confirmDeleteOk.addEventListener('click', function() {
+                if (currentDeleteId) {
+                    deleteHistoryItem(currentDeleteId);
+                }
+                confirmDeleteModal.style.display = 'none';
+                currentDeleteId = null;
+            });
+
+            confirmDeleteCancel.addEventListener('click', function() {
+                confirmDeleteModal.style.display = 'none';
+                currentDeleteId = null;
+            });
+
+            confirmClearOk.addEventListener('click', function() {
+                clearHistory();
+                confirmClearModal.style.display = 'none';
+            });
+
+            confirmClearCancel.addEventListener('click', function() {
+                confirmClearModal.style.display = 'none';
+            });
+        });
+
+        function showResult(containerId, message, isSuccess) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'result ' + (isSuccess ? 'success' : 'error');
+            resultDiv.textContent = message;
+
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'close-result';
+            closeBtn.onclick = function() {
+                container.innerHTML = '';
+                // Очищаем соответствующее поле ввода
+                const inputMap = {
+                    'phoneResultContainer': 'phoneInput',
+                    'innResultContainer': 'innInput',
+                    'snilsResultContainer': 'snilsInput',
+                    'omsResultContainer': 'omsInput',
+                    'carNumberResultContainer': 'carNumberInput',
+                    'emailResultContainer': 'emailInput'
+                };
+                if (inputMap[containerId]) {
+                    document.getElementById(inputMap[containerId]).value = '';
+                }
+            };
+
+            resultDiv.appendChild(closeBtn);
+            container.appendChild(resultDiv);
+        }
+
+        async function loadHistory() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/history`);
+                const history = await response.json();
+
+                const historyBody = document.getElementById('historyBody');
+                historyBody.innerHTML = '';
+
+                if (history.length === 0) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td colspan="5" style="text-align: center;">История валидаций пуста</td>
+                    `;
+                    historyBody.appendChild(row);
+                    return;
+                }
+
+                history.forEach((item) => {
+                    const row = document.createElement('tr');
+                    row.className = item.status === 'Верный ввод' ? 'valid' : 'invalid';
+
+                    row.innerHTML = `
+                        <td>${item.validation_type}</td>
+                        <td>${item.status}</td>
+                        <td class="validation-text" title="${item.input_text}">${item.input_text}</td>
+                        <td>${item.time}</td>
+                        <td><button class="delete-row-btn" data-id="${item.id}">Удалить</button></td>
+                    `;
+
+                    historyBody.appendChild(row);
+
+                    const deleteBtn = row.querySelector('.delete-row-btn');
+                    deleteBtn.addEventListener('click', function() {
+                        showDeleteConfirm(item.id);
+                    });
+                });
+            } catch (error) {
+                console.error('Ошибка загрузки истории:', error);
+            }
+        }
+
+        function showDeleteConfirm(id) {
+            currentDeleteId = id;
+            document.getElementById('confirmDeleteModal').style.display = 'flex';
+        }
+
+        async function deleteHistoryItem(id) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/history/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    loadHistory();
+                } else {
+                    throw new Error('Ошибка сервера');
+                }
+            } catch (error) {
+                console.error('Ошибка удаления записи:', error);
+                alert('Не удалось удалить запись');
+            }
+        }
+
+        async function clearHistory() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/history`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    loadHistory();
+                } else {
+                    throw new Error('Ошибка сервера');
+                }
+            } catch (error) {
+                console.error('Ошибка очистки истории:', error);
+                alert('Не удалось очистить историю');
+            }
+        }
+
+        async function validate(type) {
+            const inputMap = {
+                'phone': { id: 'phoneInput', endpoint: 'telephon', containerId: 'phoneResultContainer' },
+                'inn': { id: 'innInput', endpoint: 'INN', containerId: 'innResultContainer' },
+                'snils': { id: 'snilsInput', endpoint: 'SNILS', containerId: 'snilsResultContainer' },
+                'oms': { id: 'omsInput', endpoint: 'OMS', containerId: 'omsResultContainer' },
+                'carNumber': { id: 'carNumberInput', endpoint: 'car_numbers', containerId: 'carNumberResultContainer' },
+                'email': { id: 'emailInput', endpoint: 'mail', containerId: 'emailResultContainer' }
+            };
+
+            const config = inputMap[type];
+            const inputValue = document.getElementById(config.id).value.trim();
+
+            if (!inputValue) {
+                showResult(config.containerId, 'Пожалуйста, введите значение', false);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/${config.endpoint}/${encodeURIComponent(inputValue)}`);
+                const data = await response.json();
+
+                if (data.status) {
+                    let message;
+                    if (type === 'inn') {
+                        message = successMessages.inn[data.type];
+                    } else if (type === 'email') {
+                        message = successMessages.email[data.type];
+                    } else {
+                        message = successMessages[type];
+                    }
+                    showResult(config.containerId, message, true);
+                } else {
+                    showResult(config.containerId, errorMessages[type], false);
+                }
+
+                if (document.getElementById('historyModal').style.display === 'flex') {
+                    loadHistory();
+                }
+            } catch (error) {
+                showResult(config.containerId, 'Ошибка при проверке: ' + error.message, false);
+            }
+        }
+    </script>
+</body>
+</html>
